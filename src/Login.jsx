@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 const ACCESS_CODE = import.meta.env.VITE_ACCESS_CODE || "wijzigmij";
+const ADMIN_CODE = import.meta.env.VITE_ADMIN_CODE || "adminbawaba";
 
 export default function Login({ onSuccess }) {
   const [code, setCode] = useState("");
@@ -8,11 +9,12 @@ export default function Login({ onSuccess }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    console.log("hows life")
-  console.log("code", code)
+    const trimmed = code.trim();
 
-    if (code.trim() === ACCESS_CODE) {
-      onSuccess();
+    if (trimmed === ADMIN_CODE) {
+      onSuccess(true);
+    } else if (trimmed === ACCESS_CODE) {
+      onSuccess(false);
     } else {
       setError("Foute code, probeer opnieuw");
     }

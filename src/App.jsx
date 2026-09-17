@@ -18,6 +18,7 @@ import advisorIconsBase from "./data/advisor-icons.json";
 import advisorIconsAlkmaar from "./data/advisor-icons-alkmaar.json";
 
 const AUTH_KEY = "map-auth-ok";
+const ADMIN_KEY = "map-auth-admin";
 
 const COLORS = [
   "#D85A30", "#378ADD", "#639922", "#7F77DD", "#D4537E",
@@ -102,10 +103,20 @@ function MapEvents({ onZoom }) {
 
 export default function App() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === "1");
+  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem(ADMIN_KEY) === "1");
   const [activeDept, setActiveDept] = useState(DEPARTMENTS[0].id);
 
   if (!authed) {
-    return <Login onSuccess={() => { sessionStorage.setItem(AUTH_KEY, "1"); setAuthed(true); }} />;
+    return (
+      <Login
+        onSuccess={(admin) => {
+          sessionStorage.setItem(AUTH_KEY, "1");
+          sessionStorage.setItem(ADMIN_KEY, admin ? "1" : "0");
+          setAuthed(true);
+          setIsAdmin(admin);
+        }}
+      />
+    );
   }
 
   const dept = DEPARTMENTS.find((d) => d.id === activeDept);
@@ -123,12 +134,12 @@ export default function App() {
           </button>
         ))}
       </div>
-      <DeptMap key={dept.id} config={dept} />
+      <DeptMap key={dept.id} config={dept} isAdmin={isAdmin} />
     </div>
   );
 }
 
-function DeptMap({ config }) {
+function DeptMap({ config, isAdmin }) {
   const {
     postcodesUrl, advisorPostcodesBase, advisorsHome, postcodeNames,
     storageKey, firebasePath, firebaseProfilePath, advisorIconsBase,
@@ -469,10 +480,16 @@ function DeptMap({ config }) {
         <p className={firebaseEnabled ? "sync-status live" : "sync-status local"}>
           {firebaseEnabled ? "● Live gedeeld met iedereen" : "○ Enkel lokaal (niet gedeeld)"}
         </p>
-        <button className="reset-btn" onClick={handleReset} title="Wist eventuele lokale aanpassingen en gaat terug naar de standaardgegevens">
-          ↺ Herstel naar standaardgegevens
-        </button>
-        <p className="hint">Klik op een naam om de regio te tonen, dubbelklik om te bewerken</p>
+               {isAdmin && (
+          <button className="reset-btn" onClick={handleReset} title="Wist eventuele lokale aanpassingen en gaat terug naar de standaardgegevens">
+            ↺ Herstel naar standaardgegevens
+          </button>
+        )}
+                <p className="hint">
+          {isAdmin
+            ? "Klik op een naam om de regio te tonen, dubbelklik om te bewerken"
+            : "Klik op een naam om de regio te tonen"}
+        </p>
         <ul className="advisor-list">
           {advisorNames.map((name, i) => {
             const searchHit = advisorSearchHighlight[name];
@@ -488,8 +505,8 @@ function DeptMap({ config }) {
                       ? { borderColor: colorForIndex(i), background: colorForIndex(i) + "22" }
                       : {}
                   }
-                  onClick={() => selectAdvisor(name)}
-                  onDoubleClick={(e) => openEditor(name, e)}
+                                    onClick={() => selectAdvisor(name)}
+                  onDoubleClick={(e) => isAdmin && openEditor(name, e)}
                 >
                   <span className="dot" style={{ background: colorForIndex(i) }} />
                   <span style={isPrio ? { fontWeight: 700 } : {}}>{name}</span>
